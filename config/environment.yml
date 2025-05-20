@@ -1,0 +1,20 @@
+name: fmri-rsa
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.11.12
+  - numpy
+  - scipy
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - jupyterlab
+  - ipykernel
+  - transformers
+  - sentence-transformers
+  - h5py
+  - tqdm
+  - pip
