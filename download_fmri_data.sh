@@ -57,4 +57,17 @@ for pid in "${participants[@]}"; do
     else
         echo "✔ $pid already extracted"
     fi
+
+
+images_dir="data/image_data"
+mkdir -p "$images_dir"
+
+tar_file="data/image_data/images.tar"
+
+# Download the images.tar file
+wget -O "$tar_file" "https://surfdrive.surf.nl/files/index.php/s/WpLdIwiTS5cjGaT/download?path=%2F&files=images.tar"
+
+# Extract the images into the image_data folder
+tar -xf "$tar_file" -C "$images_dir"
+
 done
