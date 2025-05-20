@@ -16,3 +16,4 @@ MUJOCO_LOG.TXT
 .vscode/
 
 data/
+venv/

@@ -9,6 +9,8 @@ import random
 
 # === Parameters ===
 participant_ids = [f"P{idx:02d}" for idx in range(1, 2)]
+
+participant_ids=['P01', 'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M09', 'M10', 'M13', 'M14', 'M15', 'M16', 'M17']
 drive_root = Path('./data/Pereira') 
 network = "languageLH"
 SEED = 123
