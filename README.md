@@ -7,9 +7,14 @@ LLM-Brain alignment
 3. pip install --upgrade pip
 2. pip install -r config/requirements.txt
 
+## Run the code
+1. python3 src/execute_pipeline.py
+
 ## Download the Pereira data from https://web.mit.edu/evlab/sites/default/files/documents/index2.html.
 To perform this step:
 1. chmod +x download_fmri_data.sh
 2. ./download_fmri_data.sh
+
+
 
 
