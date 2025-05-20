@@ -15,5 +15,6 @@ MUJOCO_LOG.TXT
 
 .vscode/
 
-data/
+
+data/Pereira/
 venv/
