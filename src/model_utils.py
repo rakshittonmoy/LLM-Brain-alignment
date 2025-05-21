@@ -19,5 +19,12 @@ def encode_sentences(model, tokenizer, sentence):
     cls_embedding = outputs.last_hidden_state[:, 0, :].squeeze().numpy()
     return cls_embedding
 
+def encode_word(model, tokenizer, word):
+    inputs = tokenizer(word, return_tensors='pt')
+    with torch.no_grad():
+        outputs = model(**inputs)
+    return outputs.last_hidden_state[:, 0, :].squeeze().numpy()
+
+
 
 

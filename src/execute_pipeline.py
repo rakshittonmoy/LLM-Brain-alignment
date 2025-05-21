@@ -1,8 +1,10 @@
 from pathlib import Path
 from load_data import extract_subject_data, load_fmri_file
 from brain_utils import get_network_activations, build_rdm
-from model_utils import load_model_and_tokenizer, encode_sentences
-# from evaluate import compute_rsa
+from model_utils import load_model_and_tokenizer
+from llm_embeddings import get_llm_embeddings
+from evaluate import compute_rsa, sanity_check_rdm
+from collections import defaultdict
 import numpy as np
 import pandas as pd
 import random
@@ -10,8 +12,8 @@ import random
 # === Parameters ===
 participant_ids = [f"P{idx:02d}" for idx in range(1, 2)]
 
-participant_ids=['P01', 'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M09', 'M10', 'M13', 'M14', 'M15', 'M16', 'M17']
-drive_root = Path('./data/Pereira') 
+# participant_ids=['P01', 'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M09', 'M10', 'M13', 'M14', 'M15', 'M16', 'M17']
+drive_root = Path('./data/Pereira')
 network = "languageLH"
 SEED = 123
 np.random.seed(SEED)
@@ -31,54 +33,44 @@ for pid in participant_ids:
     rdm = build_rdm(activations)
     brain_rdms.append(rdm)
 
+brain_group_rdm = np.mean(brain_rdms, axis=0)
 
 # === Load Sentences ===
-from collections import defaultdict
-
 df = pd.read_csv(sentences_path)
 
-concept_to_sentences = defaultdict(list)
-concept_embeddings = {}
-
-# === Model Embeddings ===
-
-model, tokenizer = load_model_and_tokenizer("bert-base-uncased")
-
-
 concepts = [str(cell[0]) for cell in fmri_mat['keyConcept'].squeeze()]
-#print("Concepts:", concepts)
+
+concept_to_sentences = defaultdict(list)
 
 for _, row in df.iterrows():
-    concept = row['Concept']
+    concept = row['Concept'].lower()
     sentence = row['Sentence_Screen']
     concept_to_sentences[concept].append(sentence)
 
 print("Concepts in sentences:", concept_to_sentences)
 
-for c, sents in concept_to_sentences.items():
-    if len(sents) < 5:
-        print(f"{c} has {len(sents)} sentences!")
+# === Model Embeddings ===
+word_embeddings_per_concept, sentence_embeddings_per_concept = get_llm_embeddings(concept_to_sentences)
 
-    sent_embeddings = []
+# === Build Model RDM for words ===
+bert_embedding_matrix_for_words = np.vstack([word_embeddings_per_concept[c] for c in concepts])  # shape: (180, D)
+print("BERT Embedding matrix shape for words:", bert_embedding_matrix_for_words.shape)
+model_rdm_words = build_rdm(bert_embedding_matrix_for_words)
 
-    for sentence in sents:
-        cls_embedding = encode_sentences(model, tokenizer, sentence)
-        sent_embeddings.append(cls_embedding)
-
-    concept_embeddings[c.lower()] = np.mean(sent_embeddings, axis=0)
-
-print("Concept embeddings shape:", len(concept_embeddings), concept_embeddings['ability'].shape)
-
-# === Build Model RDM ===
-embedding_matrix = np.vstack([concept_embeddings[c] for c in concepts])  # shape: (180, D)
-print("Embedding matrix shape:", embedding_matrix.shape)
-
-model_rdm = build_rdm(embedding_matrix)
+# === Build Model RDM for sentences ===
+bert_embedding_matrix_for_sents = np.vstack([sentence_embeddings_per_concept[c] for c in concepts])  # shape: (180, D)
+print("BERT Embedding matrix shape for sentences:", bert_embedding_matrix_for_sents.shape)
+model_rdm_sents = build_rdm(bert_embedding_matrix_for_sents)
 
 
-# === Final Evaluation ===
-brain_group_rdm = np.mean(brain_rdms, axis=0)
-#corr = compute_rsa(brain_group_rdm, model_rdm)
-corr = None
+# === Brain vs LLM with single words ===
+corr = compute_rsa(brain_group_rdm, model_rdm_words)
+print(f"RSA correlation (brain vs. model): {corr}")
 
-#print(f"RSA correlation (brain vs. model): {corr:.4f}")
+# === Brain vs VLM with sentences ===
+corr = compute_rsa(brain_group_rdm, model_rdm_sents)
+print(f"RSA correlation (brain vs. model): {corr}")
+
+# Before calling compute_rsa
+# sanity_check_rdm("Brain", brain_group_rdm)
+# sanity_check_rdm("Model", model_rdm_words)
