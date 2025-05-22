@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 import random
 
+from vlm_embeddings import get_visualbert_embeddings
+
 # === Parameters ===
 #participant_ids = [f"P{idx:02d}" for idx in range(1, 2)]
 
@@ -51,33 +53,64 @@ for _, row in df.iterrows():
 concept_to_images = build_concept_to_images("data/image_data/images")
 print(concept_to_images['ability'])
 
-# === Model Embeddings ===
+# === BERT Model Embeddings ===
 word_embeddings_per_concept, sentence_embeddings_per_concept = get_llm_embeddings(concept_to_sentences)
 
-# === Build Model RDM for words ===
+
+# === Build BERT RDM for words ===
 bert_embedding_matrix_for_words = np.vstack([word_embeddings_per_concept[c] for c in concepts])  # shape: (180, D)
 print("BERT Embedding matrix shape for words:", bert_embedding_matrix_for_words.shape)
-model_rdm_words = build_rdm(bert_embedding_matrix_for_words)
-print("Model RDM shape for words:", model_rdm_words.shape)
+model_rdm_words_vlm = build_rdm(bert_embedding_matrix_for_words)
+print("Model RDM shape for words:", model_rdm_words_vlm.shape)
 
-# === Build Model RDM for sentences ===
+# === Build BERT RDM for sentences ===
 bert_embedding_matrix_for_sents = np.vstack([sentence_embeddings_per_concept[c] for c in concepts])  # shape: (180, D)
 print("BERT Embedding matrix shape for sentences:", bert_embedding_matrix_for_sents.shape)
-model_rdm_sents = build_rdm(bert_embedding_matrix_for_sents)
-print("Model RDM shape for sentences:", model_rdm_sents.shape)
+model_rdm_sents_vlm = build_rdm(bert_embedding_matrix_for_sents)
+print("Model RDM shape for sentences:", model_rdm_sents_vlm.shape)
 
 
 # Before calling compute_rsa
 sanity_check_rdm("Brain", brain_group_rdm)
-sanity_check_rdm("Model words", model_rdm_words)
-sanity_check_rdm("Model sents", model_rdm_sents)
+sanity_check_rdm("Model words", model_rdm_words_vlm)
+sanity_check_rdm("Model sents", model_rdm_sents_vlm)
+
 
 
 # === Brain vs LLM with single words ===
-corr = compute_rsa(brain_group_rdm, model_rdm_words)
+corr = compute_rsa(brain_group_rdm, model_rdm_words_vlm)
 print(f"RSA correlation (brain vs. model): {corr}")
 
 # === Brain vs VLM with sentences ===
-corr = compute_rsa(brain_group_rdm, model_rdm_sents)
+corr = compute_rsa(brain_group_rdm, model_rdm_sents_vlm)
 print(f"RSA correlation (brain vs. model): {corr}")
 
+# ========================================================================= #
+
+# === VLM Model Embeddings ===
+word_embeds, sent_embeds = get_visualbert_embeddings(concept_to_sentences, concept_to_images)
+
+# === Build VLM RDM for words ===
+vlm_embedding_matrix_for_words = np.vstack([word_embeds[c] for c in concepts])  # shape: (180, D)
+print("VLM Embedding matrix shape for words:", vlm_embedding_matrix_for_words.shape)
+model_rdm_words_vlm = build_rdm(vlm_embedding_matrix_for_words)
+print("Model RDM shape for words:", model_rdm_words_vlm.shape)
+
+# === Build VLM RDM for sentences ===
+vlm_embedding_matrix_for_sents = np.vstack([sent_embeds[c] for c in concepts])  # shape: (180, D)
+print("VLM Embedding matrix shape for sentences:", vlm_embedding_matrix_for_sents.shape)
+model_rdm_sents_vlm = build_rdm(vlm_embedding_matrix_for_sents)
+print("Model RDM shape for sentences:", model_rdm_sents_vlm.shape)
+
+# Before calling compute_rsa
+sanity_check_rdm("Brain", brain_group_rdm)
+sanity_check_rdm("Model words", model_rdm_words_vlm)
+sanity_check_rdm("Model sents", model_rdm_sents_vlm)
+
+# === Brain vs LLM with single words ===
+corr = compute_rsa(brain_group_rdm, model_rdm_words_vlm)
+print(f"RSA correlation (brain vs. model): {corr}")
+
+# === Brain vs VLM with sentences ===
+corr = compute_rsa(brain_group_rdm, model_rdm_sents_vlm)
+print(f"RSA correlation (brain vs. model): {corr}")
