@@ -11,4 +11,4 @@ def get_network_activations(fmri_data, network_name):
 def build_rdm(data):
     rdm = squareform(pdist(data, metric='cosine'))
     rdm_up_tri = rdm[np.triu_indices(rdm.shape[0], k=1)]
-    return rdm_up_tri.shape
+    return rdm_up_tri
