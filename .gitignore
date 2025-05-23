@@ -18,4 +18,5 @@ MUJOCO_LOG.TXT
 
 data/Pereira/
 venv/
+myenv/
 data/image_data

@@ -1,16 +1,15 @@
 from pathlib import Path
-from load_data import extract_subject_data, load_fmri_file
+from load_data_utils import extract_subject_data, load_fmri_file
 from brain_utils import get_network_activations, build_rdm
 from model_utils import load_model_and_tokenizer
 from llm_embeddings import get_llm_embeddings
-from concept_to_images import build_concept_to_images
+from process_data_utils import build_concept_to_sents, build_concept_to_images
 from evaluate import compute_rsa, sanity_check_rdm
 from collections import defaultdict
 import numpy as np
-import pandas as pd
 import random
 
-from vlm_embeddings import get_visualbert_embeddings
+from vlm_embeddings_resnet import get_visualbert_embeddings
 
 # === Parameters ===
 #participant_ids = [f"P{idx:02d}" for idx in range(1, 2)]
@@ -22,7 +21,7 @@ SEED = 123
 np.random.seed(SEED)
 random.seed(SEED)
 sentences_path = Path("./data/screen_sentences.csv")
-column_name = "Sentence_Screen"
+images_path = "data/image_data/images"
 fmri_mat = None
 
 # === Brain RDMs ===
@@ -38,20 +37,14 @@ for pid in participant_ids:
 
 brain_group_rdm = np.mean(brain_rdms, axis=0)
 
-# === Load Sentences ===
-df = pd.read_csv(sentences_path)
+# === Load Sentences and images for every concept ===
 
 concepts = [str(cell[0]) for cell in fmri_mat['keyConcept'].squeeze()]
 
-concept_to_sentences = defaultdict(list)
+concept_to_sentences = build_concept_to_sents(sentences_path)
 
-for _, row in df.iterrows():
-    concept = row['Concept'].lower()
-    sentence = row['Sentence_Screen']
-    concept_to_sentences[concept].append(sentence)
+concept_to_images = build_concept_to_images(images_path)
 
-concept_to_images = build_concept_to_images("data/image_data/images")
-print(concept_to_images['ability'])
 
 # === BERT Model Embeddings ===
 word_embeddings_per_concept, sentence_embeddings_per_concept = get_llm_embeddings(concept_to_sentences)

@@ -1,15 +1,19 @@
-import tarfile
-from pathlib import Path
-from scipy.io import loadmat
+import os
+import glob
+from collections import defaultdict
+import pandas as pd
 
-def extract_subject_data(tar_path, output_dir='.'):
-    print(f"Looking for: {tar_path.resolve()}")
+def build_concept_to_sents(sentences_path, ):
+    df = pd.read_csv(sentences_path)
 
-    with tarfile.open(tar_path) as tar:
-        tar.extractall(path=output_dir)
+    concept_to_sentences = defaultdict(list)
 
-def load_fmri_file(mat_path):
-    return loadmat(mat_path)
+    for _, row in df.iterrows():
+        concept = row['Concept'].lower()
+        sentence = row['Sentence_Screen']
+        concept_to_sentences[concept].append(sentence)
+
+    return concept_to_sentences
 
 def build_concept_to_images(image_root):
     concept_to_images = defaultdict(list)
@@ -20,8 +24,10 @@ def build_concept_to_images(image_root):
         if os.path.isdir(concept_path):
             image_paths = glob.glob(os.path.join(concept_path, "*.jpg"))
             concept_to_images[concept_folder.lower()] = sorted(image_paths)
-
+            
             if len(image_paths) != 6:
                 print(f"Warning: Concept '{concept_folder}' has {len(image_paths)} images.")
 
     return concept_to_images
+
+

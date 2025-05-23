@@ -2,10 +2,13 @@
 LLM-Brain alignment
 
 ## Setup the environment for the project
-1. python3 -m venv venv
-2. source venv/bin/activate
+1. python3 -m venv myenv
+2. source myenv/bin/activate
 3. pip install --upgrade pip
-2. pip install -r config/requirements.txt
+4. module load CUDA/12.6.1 (module spider cuda)
+5. pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+6. pip install 'git+https://github.com/facebookresearch/detectron2.git'
+7. pip install -r config/requirements.txt
 
 ## Run the code
 1. python3 src/execute_pipeline.py

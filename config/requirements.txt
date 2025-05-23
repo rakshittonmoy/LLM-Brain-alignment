@@ -10,3 +10,4 @@ transformers
 sentence-transformers
 h5py
 tqdm
+#torchvision

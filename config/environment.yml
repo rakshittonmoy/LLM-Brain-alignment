@@ -18,3 +18,4 @@ dependencies:
   - h5py
   - tqdm
   - pip
+  - torchvision
