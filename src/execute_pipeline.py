@@ -1,3 +1,10 @@
+import numpy as np
+import random
+
+SEED = 1
+np.random.seed(SEED)
+random.seed(SEED)
+
 from pathlib import Path
 from load_data_utils import extract_subject_data, load_fmri_file
 from brain_utils import get_network_activations, build_rdm
@@ -6,8 +13,6 @@ from llm_embeddings import get_llm_embeddings
 from process_data_utils import build_concept_to_sents, build_concept_to_images
 from evaluate import compute_rsa, sanity_check_rdm
 from collections import defaultdict
-import numpy as np
-import random
 
 from vlm_embeddings_resnet import get_visualbert_embeddings
 
@@ -17,9 +22,6 @@ from vlm_embeddings_resnet import get_visualbert_embeddings
 participant_ids=['P01', 'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M09', 'M10', 'M13', 'M14', 'M15', 'M16', 'M17']
 drive_root = Path('./data/Pereira')
 network = "languageLH"
-SEED = 123
-np.random.seed(SEED)
-random.seed(SEED)
 sentences_path = Path("./data/screen_sentences.csv")
 images_path = "data/image_data/images"
 fmri_mat = None
@@ -53,6 +55,7 @@ word_embeddings_per_concept, sentence_embeddings_per_concept = get_llm_embedding
 # === Build BERT RDM for words ===
 bert_embedding_matrix_for_words = np.vstack([word_embeddings_per_concept[c] for c in concepts])  # shape: (180, D)
 print("BERT Embedding matrix shape for words:", bert_embedding_matrix_for_words.shape)
+
 model_rdm_words_vlm = build_rdm(bert_embedding_matrix_for_words)
 print("Model RDM shape for words:", model_rdm_words_vlm.shape)
 
@@ -69,14 +72,13 @@ sanity_check_rdm("Model words", model_rdm_words_vlm)
 sanity_check_rdm("Model sents", model_rdm_sents_vlm)
 
 
-
 # === Brain vs LLM with single words ===
-corr = compute_rsa(brain_group_rdm, model_rdm_words_vlm)
-print(f"RSA correlation (brain vs. model): {corr}")
+corr, pval = compute_rsa(brain_group_rdm, model_rdm_words_vlm)
+print(f"RSA correlation: {corr:.3f}, p-value: {pval:.5f}")
 
 # === Brain vs VLM with sentences ===
-corr = compute_rsa(brain_group_rdm, model_rdm_sents_vlm)
-print(f"RSA correlation (brain vs. model): {corr}")
+corr, pval = compute_rsa(brain_group_rdm, model_rdm_sents_vlm)
+print(f"RSA correlation: {corr:.3f}, p-value: {pval:.5f}")
 
 # ========================================================================= #
 
@@ -101,9 +103,9 @@ sanity_check_rdm("Model words", model_rdm_words_vlm)
 sanity_check_rdm("Model sents", model_rdm_sents_vlm)
 
 # === Brain vs LLM with single words ===
-corr = compute_rsa(brain_group_rdm, model_rdm_words_vlm)
-print(f"RSA correlation (brain vs. model): {corr}")
+corr, pval = compute_rsa(brain_group_rdm, model_rdm_words_vlm)
+print(f"RSA correlation: {corr:.3f}, p-value: {pval:.5f}")
 
 # === Brain vs VLM with sentences ===
-corr = compute_rsa(brain_group_rdm, model_rdm_sents_vlm)
-print(f"RSA correlation (brain vs. model): {corr}")
+corr, pval = compute_rsa(brain_group_rdm, model_rdm_sents_vlm)
+print(f"RSA correlation: {corr:.3f}, p-value: {pval:.5f}")

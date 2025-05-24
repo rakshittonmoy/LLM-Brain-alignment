@@ -3,7 +3,7 @@ import glob
 from collections import defaultdict
 import pandas as pd
 
-def build_concept_to_sents(sentences_path, ):
+def build_concept_to_sents(sentences_path):
     df = pd.read_csv(sentences_path)
 
     concept_to_sentences = defaultdict(list)
