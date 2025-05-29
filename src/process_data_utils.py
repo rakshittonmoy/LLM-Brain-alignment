@@ -99,5 +99,71 @@ def plot_rdm_heatmap(rdm: np.ndarray, title: str, concepts: list = None, save_pa
 # #                      save_path=f"llm_layer_{layer_idx}_sents_rdm_heatmap.png")
 # # ...
 
+def plot_rdm_heatmap(
+    rdm: np.ndarray,
+    title: str,
+    concepts: list = None,
+    save_path: str = None,
+    figsize: tuple = (18, 14), # MODIFIED: Increased default figure size
+    fontsize_labels: int = 6,  # MODIFIED: Added parameter for label font size
+    label_skip: int = 3       # NEW: Added parameter to skip labels (e.g., 2 for every other label)
+):
+    """
+    Plots a heatmap of a Representational Dissimilarity Matrix (RDM).
+
+    Args:
+        rdm (np.ndarray): The RDM to plot. Expected to be a square matrix.
+        title (str): The title of the heatmap plot.
+        concepts (list, optional): A list of concept labels corresponding to the RDM rows/columns.
+                                   If provided, these will be used as tick labels. Defaults to None.
+        save_path (str, optional): Path to save the heatmap image (e.g., "rdm_heatmap.png").
+                                   If None, the plot will be displayed. Defaults to None.
+        figsize (tuple): Dimensions for the figure (width, height in inches). Defaults to (12, 10).
+        fontsize_labels (int): Font size for the x and y axis labels (concept names). Defaults to 8.
+        label_skip (int): If > 1, plots only every N-th label to reduce clutter. Defaults to 1 (all labels).
+    """
+    if rdm.ndim != 2 or rdm.shape[0] != rdm.shape[1]:
+        raise ValueError("RDM must be a square 2D NumPy array.")
+
+    plt.figure(figsize=figsize) # Use the new figsize parameter
+    
+    # Use seaborn.heatmap for better aesthetics
+    ax = sns.heatmap(
+        rdm,
+        cmap='viridis',
+        annot=False,
+        fmt=".2f",
+        square=True,
+        cbar_kws={'label': 'Dissimilarity'}
+    )
+
+    ax.set_title(title, fontsize=16)
+    
+    if concepts:
+        num_concepts = len(concepts)
+        # MODIFIED: Apply label_skip
+        display_concepts = [concepts[i] if i % label_skip == 0 else "" for i in range(num_concepts)]
+
+        ax.set_xticks(np.arange(num_concepts) + 0.5, minor=False)
+        ax.set_yticks(np.arange(num_concepts) + 0.5, minor=False)
+        
+        # Use the modified display_concepts for labels and new fontsize_labels
+        ax.set_xticklabels(display_concepts, rotation=90, ha='right', fontsize=fontsize_labels)
+        ax.set_yticklabels(display_concepts, rotation=0, va='center', fontsize=fontsize_labels)
+        
+        ax.tick_params(axis='x', length=0)
+        ax.tick_params(axis='y', length=0)
+    else:
+        ax.set_xlabel("Concept Index", fontsize=12)
+        ax.set_ylabel("Concept Index", fontsize=12)
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Heatmap saved to {save_path}")
+    else:
+        plt.show()
 
 
