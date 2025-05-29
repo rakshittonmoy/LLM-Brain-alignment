@@ -30,7 +30,7 @@ import numpy as np
 from model_utils import load_model_and_tokenizer, encode_word, encode_sentences
 
 # MODIFIED: Added layer_idx parameter with a default of -1 (last layer)
-def get_llm_embeddings(concept_to_sentences, model_name="bert-base-uncased", layer_idx: int = -1):
+def get_llm_embeddings(concept_to_sentences, model_name="bert-base-uncased", layer_idx: int = 12):
 
     model, tokenizer = load_model_and_tokenizer(model_name)
     word_embeddings_per_concept = {}

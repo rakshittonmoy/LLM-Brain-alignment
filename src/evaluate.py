@@ -16,7 +16,7 @@ def compute_rsa(brain_rdm, model_rdm):
     valid = np.isfinite(brain_rdm) & np.isfinite(model_rdm)
     if np.std(brain_rdm[valid]) == 0 or np.std(model_rdm[valid]) == 0:
         print("Invalid or constant vectors — returning NaN")
-        return np.nan
+        return np.nan, np.nan
 
     corr, pval = spearmanr(brain_rdm[valid], model_rdm[valid])
     
