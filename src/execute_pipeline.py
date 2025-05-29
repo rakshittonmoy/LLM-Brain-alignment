@@ -218,3 +218,17 @@ for layer_idx in sorted(llm_correlation_results_sents.keys()):
     print(f"Layer {layer_idx}: Correlation = {corr:.4f}")
 
 print(f"\nBest LLM Sentence Layer: {best_llm_sents_layer} with Correlation: {best_llm_sents_correlation:.4f}")
+
+
+# Plot VLM RDMs (you might want to find the best VLM layer similarly)
+
+
+plot_rdm_heatmap(
+        best_llm_sents_rdm,
+        f"Best LLM Sentence RDM (Layer {best_llm_sents_layer})",
+        concepts=concepts,
+        save_path=f"llm_best_sents_rdm_layer_{best_llm_sents_layer}.png"
+    )
+
+plot_rdm_heatmap(model_rdm_words_vlm, "VLM Word RDM", concepts=concepts, save_path="vlm_word_rdm_heatmap.png")
+plot_rdm_heatmap(model_rdm_sents_vlm, "VLM Sentence RDM", concepts=concepts, save_path="vlm_sents_rdm_heatmap.png")
