@@ -83,12 +83,12 @@ sanity_check_rdm("Model sents", model_rdm_sents_llm)
 
 # === Brain vs LLM with single words ===
 corr, pval = compute_rsa(brain_group_rdm, model_rdm_words_llm)
-print(f"RSA correlation: {corr:.3f}, p-value: {pval:.5f}")
+print(f"RSA correlation LLM with words (last layer): {corr:.3f}, p-value: {pval:.5f}")
 results.append({"Model": "BERT", "Condition": "Single words", "Correlation": corr, "p-value": pval})
 
 # === Brain vs LLM with sentences ===
 corr, pval = compute_rsa(brain_group_rdm, model_rdm_sents_llm)
-print(f"RSA correlation: {corr:.3f}, p-value: {pval:.5f}")
+print(f"RSA correlation LLM with sents (last layer): {corr:.3f}, p-value: {pval:.5f}")
 results.append({"Model": "BERT", "Condition": "Full sentences", "Correlation": corr, "p-value": pval})
 
 # ========================================================================= #
@@ -118,12 +118,12 @@ plot_rdm_heatmap(model_rdm_sents_vlm_last_layer_vlm, "VLM Sentence RDM", concept
 
 # === Brain vs LLM with single words ===
 corr, pval = compute_rsa(brain_group_rdm, model_rdm_words_vlm)
-print(f"RSA correlation: {corr:.3f}, p-value: {pval:.5f}")
+print(f"RSA correlation VLM Words: {corr:.3f}, p-value: {pval:.5f}")
 results.append({"Model": "VisualBERT", "Condition": "Single words", "Correlation": corr, "p-value": pval})
 
 # === Brain vs VLM with sentences ===
 corr, pval = compute_rsa(brain_group_rdm, model_rdm_sents_vlm)
-print(f"RSA correlation: {corr:.3f}, p-value: {pval:.5f}")
+print(f"RSA correlation VLM Sents: {corr:.3f}, p-value: {pval:.5f}")
 results.append({"Model": "VisualBERT", "Condition": "Full sentences", "Correlation": corr, "p-value": pval})
 
 # === Save results === #
@@ -147,12 +147,14 @@ llm_correlation_results_sents = {}
 best_llm_sents_correlation = -float('inf')
 best_llm_sents_layer = None
 best_llm_sents_rdm = None
+best_llm_sents_pval = None
 
 all_llm_word_embeds_by_layer = {}
 llm_correlation_results_words = {}
 best_llm_words_correlation = -float('inf')
 best_llm_words_layer = None
 best_llm_words_rdm = None
+best_llm_words_pval = None
 
 print("\n--- Evaluating LLM Embeddings Across Layers ---")
 for layer_idx in all_possible_llm_layers:
@@ -188,12 +190,13 @@ for layer_idx in all_possible_llm_layers:
         print(f"Evaluating LLM Word RDM for Layer {layer_idx}...")
         current_correlation, pval = compute_rsa(brain_group_rdm, model_rdm_words_llm)
         llm_correlation_results_words[layer_idx] = current_correlation
-        print(f"LLM Word RDM (Layer {layer_idx}) vs Brain RDM Correlation: {current_correlation:.4f}")
+        print(f"LLM Word RDM (Layer {layer_idx}) vs Brain RDM Correlation: {current_correlation:.4f}, with p-val: {pval:.6f}")
 
         if current_correlation > best_llm_words_correlation:
             best_llm_words_correlation = current_correlation
             best_llm_words_layer = layer_idx
             best_llm_words_rdm = model_rdm_full_words_llm
+            best_llm_words_pval = pval
 
     # Sentences
 
@@ -209,26 +212,27 @@ for layer_idx in all_possible_llm_layers:
         print(f"Evaluating LLM Sentence RDM for Layer {layer_idx}...")
         current_correlation, pval = compute_rsa(brain_group_rdm, model_rdm_sents_llm)
         llm_correlation_results_sents[layer_idx] = current_correlation
-        print(f"LLM Sentence RDM (Layer {layer_idx}) vs Brain RDM Correlation: {current_correlation:.4f}")
+        print(f"LLM Sentence RDM (Layer {layer_idx}) vs Brain RDM Correlation: {current_correlation:.4f}, with p-val: {pval:.6f}")
 
         if current_correlation > best_llm_sents_correlation:
             best_llm_sents_correlation = current_correlation
             best_llm_sents_layer = layer_idx
             best_llm_sents_rdm = model_rdm_full_sents_llm
+            best_llm_sents_pval = pval
 
 print("\n--- LLM Layer Comparison Results (Words) ---")
 for layer_idx in sorted(llm_correlation_results_words.keys()):
     corr = llm_correlation_results_words[layer_idx]
     print(f"Layer {layer_idx}: Correlation = {corr:.4f}")
 
-print(f"\nBest LLM Word Layer: {best_llm_words_layer} with Correlation: {best_llm_words_correlation:.4f}")
+print(f"\nBest LLM Word Layer: {best_llm_words_layer} with Correlation: {best_llm_words_correlation:.4f} with p-val: {best_llm_words_pval:.6f}")
 
 print("\n--- LLM Layer Comparison Results (Sentences) ---")
 for layer_idx in sorted(llm_correlation_results_sents.keys()):
     corr = llm_correlation_results_sents[layer_idx]
     print(f"Layer {layer_idx}: Correlation = {corr:.4f}")
 
-print(f"\nBest LLM Sentence Layer: {best_llm_sents_layer} with Correlation: {best_llm_sents_correlation:.4f}")
+print(f"\nBest LLM Sentence Layer: {best_llm_sents_layer} with Correlation: {best_llm_sents_correlation:.4f} with p-val: {best_llm_sents_pval:.6f}")
 
 
 # Plot RDMs (Brain, LLM, VLM)
