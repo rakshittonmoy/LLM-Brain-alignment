@@ -11,7 +11,7 @@ from load_data_utils import extract_subject_data, load_fmri_file
 from brain_utils import get_network_activations, build_rdm
 from model_utils import load_model_and_tokenizer
 from llm_embeddings import get_llm_embeddings
-from process_data_utils import build_concept_to_sents, build_concept_to_images, plot_rdm_heatmap
+from process_data_utils import build_concept_to_sents, build_concept_to_images, plot_rdm_heatmap, plot_layerwise_correlation
 from evaluate import compute_rsa, sanity_check_rdm
 from collections import defaultdict
 
@@ -62,7 +62,7 @@ word_embeddings_per_concept, sentence_embeddings_per_concept = get_llm_embedding
 bert_embedding_matrix_for_words = np.vstack([word_embeddings_per_concept[c] for c in concepts])  # shape: (180, D)
 print("BERT Embedding matrix shape for words:", bert_embedding_matrix_for_words.shape)
 
-_, model_rdm_words_llm = build_rdm(bert_embedding_matrix_for_words)
+model_rdm_words_last_layer_llm, model_rdm_words_llm = build_rdm(bert_embedding_matrix_for_words)
 print("Model RDM shape for words:", model_rdm_words_llm.shape)
 
 # === Build BERT RDM for sentences ===
@@ -71,6 +71,8 @@ print("BERT Embedding matrix shape for sentences:", bert_embedding_matrix_for_se
 
 _, model_rdm_sents_llm = build_rdm(bert_embedding_matrix_for_sents)
 print("Model RDM shape for sentences:", model_rdm_sents_llm.shape)
+
+plot_rdm_heatmap(model_rdm_words_last_layer_llm, "LLM Word RDM", concepts=concepts, save_path="llm_word_rdm_last_layer_heatmap.png")
 
 
 # Before calling compute_rsa
@@ -92,38 +94,41 @@ results.append({"Model": "BERT", "Condition": "Full sentences", "Correlation": c
 # ========================================================================= #
 
 # === VLM Model Embeddings ===
-# word_embeds, sent_embeds = get_visualbert_embeddings(concept_to_sentences, concept_to_images)
+word_embeds, sent_embeds = get_visualbert_embeddings(concept_to_sentences, concept_to_images)
 
-# # === Build VLM RDM for words ===
-# vlm_embedding_matrix_for_words = np.vstack([word_embeds[c] for c in concepts])  # shape: (180, D)
-# print("VLM Embedding matrix shape for words:", vlm_embedding_matrix_for_words.shape)
-# _, model_rdm_words_vlm = build_rdm(vlm_embedding_matrix_for_words)
-# print("Model RDM shape for words:", model_rdm_words_vlm.shape)
+# === Build VLM RDM for words ===
+vlm_embedding_matrix_for_words = np.vstack([word_embeds[c] for c in concepts])  # shape: (180, D)
+print("VLM Embedding matrix shape for words:", vlm_embedding_matrix_for_words.shape)
+model_rdm_words_vlm_last_layer_vlm, model_rdm_words_vlm = build_rdm(vlm_embedding_matrix_for_words)
+print("Model RDM shape for words:", model_rdm_words_vlm.shape)
 
-# # === Build VLM RDM for sentences ===
-# vlm_embedding_matrix_for_sents = np.vstack([sent_embeds[c] for c in concepts])  # shape: (180, D)
-# print("VLM Embedding matrix shape for sentences:", vlm_embedding_matrix_for_sents.shape)
-# _, model_rdm_sents_vlm = build_rdm(vlm_embedding_matrix_for_sents)
-# print("Model RDM shape for sentences:", model_rdm_sents_vlm.shape)
+# === Build VLM RDM for sentences ===
+vlm_embedding_matrix_for_sents = np.vstack([sent_embeds[c] for c in concepts])  # shape: (180, D)
+print("VLM Embedding matrix shape for sentences:", vlm_embedding_matrix_for_sents.shape)
+model_rdm_sents_vlm_last_layer_vlm, model_rdm_sents_vlm = build_rdm(vlm_embedding_matrix_for_sents)
+print("Model RDM shape for sentences:", model_rdm_sents_vlm.shape)
 
-# # Before calling compute_rsa
-# sanity_check_rdm("Brain", brain_group_rdm)
-# sanity_check_rdm("Model words", model_rdm_words_vlm)
-# sanity_check_rdm("Model sents", model_rdm_sents_vlm)
+# Before calling compute_rsa
+sanity_check_rdm("Brain", brain_group_rdm)
+sanity_check_rdm("Model words", model_rdm_words_vlm)
+sanity_check_rdm("Model sents", model_rdm_sents_vlm)
 
-# # === Brain vs LLM with single words ===
-# corr, pval = compute_rsa(brain_group_rdm, model_rdm_words_vlm)
-# print(f"RSA correlation: {corr:.3f}, p-value: {pval:.5f}")
-# results.append({"Model": "VisualBERT", "Condition": "Single words", "Correlation": corr, "p-value": pval})
+plot_rdm_heatmap(model_rdm_words_vlm_last_layer_vlm, "VLM Word RDM", concepts=concepts, save_path="vlm_words_rdm_last_layer_heatmap.png")
+plot_rdm_heatmap(model_rdm_sents_vlm_last_layer_vlm, "VLM Sentence RDM", concepts=concepts, save_path="vlm_sents_rdm_last_layer_heatmap.png")
 
-# # === Brain vs VLM with sentences ===
-# corr, pval = compute_rsa(brain_group_rdm, model_rdm_sents_vlm)
-# print(f"RSA correlation: {corr:.3f}, p-value: {pval:.5f}")
-# results.append({"Model": "VisualBERT", "Condition": "Full sentences", "Correlation": corr, "p-value": pval})
+# === Brain vs LLM with single words ===
+corr, pval = compute_rsa(brain_group_rdm, model_rdm_words_vlm)
+print(f"RSA correlation: {corr:.3f}, p-value: {pval:.5f}")
+results.append({"Model": "VisualBERT", "Condition": "Single words", "Correlation": corr, "p-value": pval})
 
-# # === Save results === #
-# df = pd.DataFrame(results)
-# df.to_csv(f"rsa_results_{network}.csv", index=False)
+# === Brain vs VLM with sentences ===
+corr, pval = compute_rsa(brain_group_rdm, model_rdm_sents_vlm)
+print(f"RSA correlation: {corr:.3f}, p-value: {pval:.5f}")
+results.append({"Model": "VisualBERT", "Condition": "Full sentences", "Correlation": corr, "p-value": pval})
+
+# === Save results === #
+df = pd.DataFrame(results)
+df.to_csv(f"rsa_results_{network}.csv", index=False)
 
 ## # ================Any layer code========================================================= # #
 
@@ -229,5 +234,19 @@ print(f"\nBest LLM Sentence Layer: {best_llm_sents_layer} with Correlation: {bes
 # Plot RDMs (Brain, LLM, VLM)
 
 plot_rdm_heatmap(squareform(brain_group_rdm), "Brain Group RDM", concepts=concepts, save_path="brain_rdm_heatmap.png")
-plot_rdm_heatmap(best_llm_words_rdm, "LLM Word RDM", concepts=concepts, save_path="llm_word_rdm_heatmap.png")
-plot_rdm_heatmap(best_llm_sents_rdm, "LLM Sentence RDM", concepts=concepts, save_path="llm_sents_rdm_heatmap.png")
+plot_rdm_heatmap(best_llm_words_rdm, "LLM Word RDM", concepts=concepts, save_path="llm_word_rdm_1st_layer_best_layer_heatmap.png")
+plot_rdm_heatmap(best_llm_sents_rdm, "LLM Sentence RDM", concepts=concepts, save_path="llm_sents_rdm_last_layer_best_layer_heatmap.png")
+
+
+plot_layerwise_correlation(
+    llm_correlation_results_words,
+    "LLM Word Embeddings: Correlation with Brain RDM by Layer",
+    save_path="llm_words_layerwise_correlation.png"
+)
+
+
+plot_layerwise_correlation(
+    llm_correlation_results_sents,
+    "LLM Sentence Embeddings: Correlation with Brain RDM by Layer",
+    save_path="llm_sents_layerwise_correlation.png"
+)

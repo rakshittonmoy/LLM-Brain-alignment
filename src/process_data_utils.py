@@ -166,4 +166,59 @@ def plot_rdm_heatmap(
     else:
         plt.show()
 
+def plot_layerwise_correlation(
+    correlation_data: dict,
+    title: str,
+    x_label: str = "Layer Index",
+    y_label: str = "Correlation (Spearman's ρ)",
+    save_path: str = None,
+    figsize: tuple = (10, 6)
+):
+    """
+    Plots a line graph showing correlation values across different layers.
+
+    Args:
+        correlation_data (dict): A dictionary where keys are layer indices (int)
+                                 and values are correlation coefficients (float).
+        title (str): The title of the plot.
+        x_label (str): Label for the x-axis.
+        y_label (str): Label for the y-axis.
+        save_path (str, optional): Path to save the plot image (e.g., "layer_correlations.png").
+                                   If None, the plot will be displayed. Defaults to None.
+        figsize (tuple): Dimensions for the figure (width, height in inches). Defaults to (10, 6).
+    """
+    # Sort data by layer index for proper plotting order
+    sorted_layers = sorted(correlation_data.keys())
+    correlations = [correlation_data[layer] for layer in sorted_layers]
+
+    plt.figure(figsize=figsize)
+    sns.lineplot(x=sorted_layers, y=correlations, marker='o', linestyle='-')
+
+    plt.title(title, fontsize=16)
+    plt.xlabel(x_label, fontsize=12)
+    plt.ylabel(y_label, fontsize=12)
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.xticks(sorted_layers) # Ensure all layer indices are shown as ticks
+
+    # Highlight the best layer if applicable
+    max_corr = -float('inf')
+    best_layer = None
+    for layer, corr in correlation_data.items():
+        if not np.isnan(corr) and corr > max_corr:
+            max_corr = corr
+            best_layer = layer
+    
+    if best_layer is not None:
+        plt.axvline(x=best_layer, color='r', linestyle='--', label=f'Best Layer: {best_layer} ({max_corr:.4f})')
+        plt.legend()
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Layer-wise correlation plot saved to {save_path}")
+    else:
+        plt.show()
+
 
