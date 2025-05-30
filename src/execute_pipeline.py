@@ -23,7 +23,7 @@ from scipy.spatial.distance import squareform
 
 participant_ids=['P01', 'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M09', 'M10', 'M13', 'M14', 'M15', 'M16', 'M17']
 drive_root = Path('./data/Pereira')
-network = "languageLH"
+network = "languageRH"
 sentences_path = Path("./data/screen_sentences.csv")
 images_path = "data/image_data/images"
 fmri_mat = None
