@@ -283,9 +283,9 @@ best_llm_words_layer = None
 best_llm_words_rdm = None
 best_llm_words_pval = None
 
-print("\n--- Evaluating LLM Embeddings Across Layers ---")
+print("\n--- Evaluating VLM Embeddings Across Layers ---")
 for layer_idx in all_possible_vlm_layers:
-    print(f"\nProcessing LLM Layer: {layer_idx}")
+    print(f"\nProcessing VLM Layer: {layer_idx}")
     
     # Get LLM embeddings for the current layer
     # _ is used because we're currently only interested in sentence embeddings for comparison
@@ -307,17 +307,17 @@ for layer_idx in all_possible_vlm_layers:
 
     # Check for constant input warning before building RDM
     if llm_embedding_matrix_for_words.std() < 1e-6:
-        print(f"WARNING: LLM Word Embedding matrix for Layer {layer_idx} has very low standard deviation. RDM might be constant.")
+        print(f"WARNING: VLM Word Embedding matrix for Layer {layer_idx} has very low standard deviation. RDM might be constant.")
         # If this happens often, you might want to skip correlation for this layer or handle it.
         llm_correlation_results_words[layer_idx] = np.nan # Assign NaN if RDM is expected to be constant
     else:
         model_rdm_full_words_llm, model_rdm_words_llm = build_rdm(llm_embedding_matrix_for_words)
 
         # Evaluate correlation with brain RDM
-        print(f"Evaluating LLM Word RDM for Layer {layer_idx}...")
+        print(f"Evaluating VLM Word RDM for Layer {layer_idx}...")
         current_correlation, pval = compute_rsa(brain_group_rdm, model_rdm_words_llm)
         llm_correlation_results_words[layer_idx] = current_correlation
-        print(f"LLM Word RDM (Layer {layer_idx}) vs Brain RDM Correlation: {current_correlation:.4f}, with p-val: {pval:.6f}")
+        print(f"VLM Word RDM (Layer {layer_idx}) vs Brain RDM Correlation: {current_correlation:.4f}, with p-val: {pval:.6f}")
 
         if current_correlation > best_llm_words_correlation:
             best_llm_words_correlation = current_correlation
@@ -329,17 +329,17 @@ for layer_idx in all_possible_vlm_layers:
 
     # Check for constant input warning before building RDM
     if llm_embedding_matrix_for_sents.std() < 1e-6:
-        print(f"WARNING: LLM Sentence Embedding matrix for Layer {layer_idx} has very low standard deviation. RDM might be constant.")
+        print(f"WARNING: VLM Sentence Embedding matrix for Layer {layer_idx} has very low standard deviation. RDM might be constant.")
         # If this happens often, you might want to skip correlation for this layer or handle it.
         llm_correlation_results_sents[layer_idx] = np.nan # Assign NaN if RDM is expected to be constant
     else:
         model_rdm_full_sents_llm, model_rdm_sents_llm = build_rdm(llm_embedding_matrix_for_sents)
 
         # Evaluate correlation with brain RDM
-        print(f"Evaluating LLM Sentence RDM for Layer {layer_idx}...")
+        print(f"Evaluating VLM Sentence RDM for Layer {layer_idx}...")
         current_correlation, pval = compute_rsa(brain_group_rdm, model_rdm_sents_llm)
         llm_correlation_results_sents[layer_idx] = current_correlation
-        print(f"LLM Sentence RDM (Layer {layer_idx}) vs Brain RDM Correlation: {current_correlation:.4f}, with p-val: {pval:.6f}")
+        print(f"VLM Sentence RDM (Layer {layer_idx}) vs Brain RDM Correlation: {current_correlation:.4f}, with p-val: {pval:.6f}")
 
         if current_correlation > best_llm_sents_correlation:
             best_llm_sents_correlation = current_correlation
@@ -347,19 +347,19 @@ for layer_idx in all_possible_vlm_layers:
             best_llm_sents_rdm = model_rdm_full_sents_llm
             best_llm_sents_pval = pval
 
-print("\n--- LLM Layer Comparison Results (Words) ---")
+print("\n--- VLM Layer Comparison Results (Words) ---")
 for layer_idx in sorted(llm_correlation_results_words.keys()):
     corr = llm_correlation_results_words[layer_idx]
     print(f"Layer {layer_idx}: Correlation = {corr:.4f}")
 
-print(f"\nBest LLM Word Layer: {best_llm_words_layer} with Correlation: {best_llm_words_correlation:.4f} with p-val: {best_llm_words_pval:.6f}")
+print(f"\nBest VLM Word Layer: {best_llm_words_layer} with Correlation: {best_llm_words_correlation:.4f} with p-val: {best_llm_words_pval:.6f}")
 
-print("\n--- LLM Layer Comparison Results (Sentences) ---")
+print("\n--- VLM Layer Comparison Results (Sentences) ---")
 for layer_idx in sorted(llm_correlation_results_sents.keys()):
     corr = llm_correlation_results_sents[layer_idx]
     print(f"Layer {layer_idx}: Correlation = {corr:.4f}")
 
-print(f"\nBest LLM Sentence Layer: {best_llm_sents_layer} with Correlation: {best_llm_sents_correlation:.4f} with p-val: {best_llm_sents_pval:.6f}")
+print(f"\nBest VLM Sentence Layer: {best_llm_sents_layer} with Correlation: {best_llm_sents_correlation:.4f} with p-val: {best_llm_sents_pval:.6f}")
 
 
 # Plot RDMs (Brain, LLM, VLM)
@@ -371,14 +371,15 @@ plot_rdm_heatmap(best_llm_sents_rdm, "VLM Sentence RDM", concepts=concepts, save
 
 plot_layerwise_correlation(
     llm_correlation_results_words,
-    "VLM Word Embeddings: Correlation with Brain RDM by Layer",
-    save_path="llm_words_layerwise_correlation.png"
-)
-
-
-plot_layerwise_correlation(
     llm_correlation_results_sents,
-    "VLM Sentence Embeddings: Correlation with Brain RDM by Layer",
-    save_path="vlm_sents_layerwise_correlation.png"
+    "VLM Embeddings: Correlation with Brain RDM by Layer",
+    save_path="vlm_words_sents_layerwise_correlation_language_rh.png"
 )
+
+
+# plot_layerwise_correlation(
+#     llm_correlation_results_sents,
+#     "VLM Sentence Embeddings: Correlation with Brain RDM by Layer",
+#     save_path="vlm_sents_layerwise_correlation.png"
+# )
 
