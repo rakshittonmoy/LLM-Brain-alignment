@@ -15,7 +15,7 @@ from process_data_utils import build_concept_to_sents, build_concept_to_images, 
 from evaluate import compute_rsa, sanity_check_rdm
 from collections import defaultdict
 
-from vlm_embeddings_resnet import get_visualbert_embeddings
+from vlm_embeddings_resnet import load_visualbert, get_visualbert_embeddings
 from scipy.spatial.distance import squareform
 
 # === Parameters ===
@@ -94,51 +94,178 @@ results.append({"Model": "BERT", "Condition": "Full sentences", "Correlation": c
 # ========================================================================= #
 
 # === VLM Model Embeddings ===
-word_embeds, sent_embeds = get_visualbert_embeddings(concept_to_sentences, concept_to_images)
+# word_embeds, sent_embeds = get_visualbert_embeddings(concept_to_sentences, concept_to_images)
 
-# === Build VLM RDM for words ===
-vlm_embedding_matrix_for_words = np.vstack([word_embeds[c] for c in concepts])  # shape: (180, D)
-print("VLM Embedding matrix shape for words:", vlm_embedding_matrix_for_words.shape)
-model_rdm_words_vlm_last_layer_vlm, model_rdm_words_vlm = build_rdm(vlm_embedding_matrix_for_words)
-print("Model RDM shape for words:", model_rdm_words_vlm.shape)
+# # === Build VLM RDM for words ===
+# vlm_embedding_matrix_for_words = np.vstack([word_embeds[c] for c in concepts])  # shape: (180, D)
+# print("VLM Embedding matrix shape for words:", vlm_embedding_matrix_for_words.shape)
+# model_rdm_words_vlm_last_layer_vlm, model_rdm_words_vlm = build_rdm(vlm_embedding_matrix_for_words)
+# print("Model RDM shape for words:", model_rdm_words_vlm.shape)
 
-# === Build VLM RDM for sentences ===
-vlm_embedding_matrix_for_sents = np.vstack([sent_embeds[c] for c in concepts])  # shape: (180, D)
-print("VLM Embedding matrix shape for sentences:", vlm_embedding_matrix_for_sents.shape)
-model_rdm_sents_vlm_last_layer_vlm, model_rdm_sents_vlm = build_rdm(vlm_embedding_matrix_for_sents)
-print("Model RDM shape for sentences:", model_rdm_sents_vlm.shape)
+# # === Build VLM RDM for sentences ===
+# vlm_embedding_matrix_for_sents = np.vstack([sent_embeds[c] for c in concepts])  # shape: (180, D)
+# print("VLM Embedding matrix shape for sentences:", vlm_embedding_matrix_for_sents.shape)
+# model_rdm_sents_vlm_last_layer_vlm, model_rdm_sents_vlm = build_rdm(vlm_embedding_matrix_for_sents)
+# print("Model RDM shape for sentences:", model_rdm_sents_vlm.shape)
 
-# Before calling compute_rsa
-sanity_check_rdm("Brain", brain_group_rdm)
-sanity_check_rdm("Model words", model_rdm_words_vlm)
-sanity_check_rdm("Model sents", model_rdm_sents_vlm)
+# # Before calling compute_rsa
+# sanity_check_rdm("Brain", brain_group_rdm)
+# sanity_check_rdm("Model words", model_rdm_words_vlm)
+# sanity_check_rdm("Model sents", model_rdm_sents_vlm)
 
-plot_rdm_heatmap(model_rdm_words_vlm_last_layer_vlm, "VLM Word RDM", concepts=concepts, save_path="vlm_words_rdm_last_layer_heatmap.png")
-plot_rdm_heatmap(model_rdm_sents_vlm_last_layer_vlm, "VLM Sentence RDM", concepts=concepts, save_path="vlm_sents_rdm_last_layer_heatmap.png")
+# plot_rdm_heatmap(model_rdm_words_vlm_last_layer_vlm, "VLM Word RDM", concepts=concepts, save_path="vlm_words_rdm_last_layer_heatmap.png")
+# plot_rdm_heatmap(model_rdm_sents_vlm_last_layer_vlm, "VLM Sentence RDM", concepts=concepts, save_path="vlm_sents_rdm_last_layer_heatmap.png")
 
-# === Brain vs LLM with single words ===
-corr, pval = compute_rsa(brain_group_rdm, model_rdm_words_vlm)
-print(f"RSA correlation VLM Words: {corr:.3f}, p-value: {pval:.5f}")
-results.append({"Model": "VisualBERT", "Condition": "Single words", "Correlation": corr, "p-value": pval})
+# # === Brain vs LLM with single words ===
+# corr, pval = compute_rsa(brain_group_rdm, model_rdm_words_vlm)
+# print(f"RSA correlation VLM Words: {corr:.3f}, p-value: {pval:.5f}")
+# results.append({"Model": "VisualBERT", "Condition": "Single words", "Correlation": corr, "p-value": pval})
 
-# === Brain vs VLM with sentences ===
-corr, pval = compute_rsa(brain_group_rdm, model_rdm_sents_vlm)
-print(f"RSA correlation VLM Sents: {corr:.3f}, p-value: {pval:.5f}")
-results.append({"Model": "VisualBERT", "Condition": "Full sentences", "Correlation": corr, "p-value": pval})
+# # === Brain vs VLM with sentences ===
+# corr, pval = compute_rsa(brain_group_rdm, model_rdm_sents_vlm)
+# print(f"RSA correlation VLM Sents: {corr:.3f}, p-value: {pval:.5f}")
+# results.append({"Model": "VisualBERT", "Condition": "Full sentences", "Correlation": corr, "p-value": pval})
 
 # === Save results === #
 df = pd.DataFrame(results)
 df.to_csv(f"rsa_results_{network}.csv", index=False)
 
-## # ================Any layer code========================================================= # #
+## # ================Any layer code LLM========================================================= # #
 
-print("Determining BERT model layers...")
-temp_model, _ = load_model_and_tokenizer(model_name="bert-base-uncased")
-num_bert_transformer_layers = temp_model.config.num_hidden_layers # Typically 12 for bert-base
-# Total outputs are embedding layer (0) + transformer layers (1 to num_bert_transformer_layers)
-all_possible_llm_layers = list(range(num_bert_transformer_layers + 1))
+# print("Determining BERT model layers...")
+# temp_model, _ = load_model_and_tokenizer(model_name="bert-base-uncased")
+# num_bert_transformer_layers = temp_model.config.num_hidden_layers # Typically 12 for bert-base
+# # Total outputs are embedding layer (0) + transformer layers (1 to num_bert_transformer_layers)
+# all_possible_llm_layers = list(range(num_bert_transformer_layers + 1))
+# del temp_model # Free up memory
+# print(f"BERT-base-uncased has {len(all_possible_llm_layers)} output layers (0 to {num_bert_transformer_layers}).")
+
+
+# # --- Store results for each LLM layer ---
+# all_llm_sent_embeds_by_layer = {}
+# llm_correlation_results_sents = {}
+# best_llm_sents_correlation = -float('inf')
+# best_llm_sents_layer = None
+# best_llm_sents_rdm = None
+# best_llm_sents_pval = None
+
+# all_llm_word_embeds_by_layer = {}
+# llm_correlation_results_words = {}
+# best_llm_words_correlation = -float('inf')
+# best_llm_words_layer = None
+# best_llm_words_rdm = None
+# best_llm_words_pval = None
+
+# print("\n--- Evaluating LLM Embeddings Across Layers ---")
+# for layer_idx in all_possible_llm_layers:
+#     print(f"\nProcessing LLM Layer: {layer_idx}")
+    
+#     # Get LLM embeddings for the current layer
+#     # _ is used because we're currently only interested in sentence embeddings for comparison
+#     current_llm_word_embeds, current_llm_sent_embeds = get_llm_embeddings(
+#         concept_to_sentences,
+#         model_name="bert-base-uncased",
+#         layer_idx=layer_idx
+#     )
+
+#     all_llm_word_embeds_by_layer[layer_idx] = current_llm_word_embeds
+#     all_llm_sent_embeds_by_layer[layer_idx] = current_llm_sent_embeds
+
+#     # Build LLM RDM for sentences for the current layer
+#     # Ensure the order of concepts in vstack matches the order used for brain_rdm
+#     llm_embedding_matrix_for_words = np.vstack([current_llm_word_embeds[c] for c in concepts])
+#     llm_embedding_matrix_for_sents = np.vstack([current_llm_sent_embeds[c] for c in concepts])
+    
+#     # Words
+
+#     # Check for constant input warning before building RDM
+#     if llm_embedding_matrix_for_words.std() < 1e-6:
+#         print(f"WARNING: LLM Word Embedding matrix for Layer {layer_idx} has very low standard deviation. RDM might be constant.")
+#         # If this happens often, you might want to skip correlation for this layer or handle it.
+#         llm_correlation_results_words[layer_idx] = np.nan # Assign NaN if RDM is expected to be constant
+#     else:
+#         model_rdm_full_words_llm, model_rdm_words_llm = build_rdm(llm_embedding_matrix_for_words)
+
+#         # Evaluate correlation with brain RDM
+#         print(f"Evaluating LLM Word RDM for Layer {layer_idx}...")
+#         current_correlation, pval = compute_rsa(brain_group_rdm, model_rdm_words_llm)
+#         llm_correlation_results_words[layer_idx] = current_correlation
+#         print(f"LLM Word RDM (Layer {layer_idx}) vs Brain RDM Correlation: {current_correlation:.4f}, with p-val: {pval:.6f}")
+
+#         if current_correlation > best_llm_words_correlation:
+#             best_llm_words_correlation = current_correlation
+#             best_llm_words_layer = layer_idx
+#             best_llm_words_rdm = model_rdm_full_words_llm
+#             best_llm_words_pval = pval
+
+#     # Sentences
+
+#     # Check for constant input warning before building RDM
+#     if llm_embedding_matrix_for_sents.std() < 1e-6:
+#         print(f"WARNING: LLM Sentence Embedding matrix for Layer {layer_idx} has very low standard deviation. RDM might be constant.")
+#         # If this happens often, you might want to skip correlation for this layer or handle it.
+#         llm_correlation_results_sents[layer_idx] = np.nan # Assign NaN if RDM is expected to be constant
+#     else:
+#         model_rdm_full_sents_llm, model_rdm_sents_llm = build_rdm(llm_embedding_matrix_for_sents)
+
+#         # Evaluate correlation with brain RDM
+#         print(f"Evaluating LLM Sentence RDM for Layer {layer_idx}...")
+#         current_correlation, pval = compute_rsa(brain_group_rdm, model_rdm_sents_llm)
+#         llm_correlation_results_sents[layer_idx] = current_correlation
+#         print(f"LLM Sentence RDM (Layer {layer_idx}) vs Brain RDM Correlation: {current_correlation:.4f}, with p-val: {pval:.6f}")
+
+#         if current_correlation > best_llm_sents_correlation:
+#             best_llm_sents_correlation = current_correlation
+#             best_llm_sents_layer = layer_idx
+#             best_llm_sents_rdm = model_rdm_full_sents_llm
+#             best_llm_sents_pval = pval
+
+# print("\n--- LLM Layer Comparison Results (Words) ---")
+# for layer_idx in sorted(llm_correlation_results_words.keys()):
+#     corr = llm_correlation_results_words[layer_idx]
+#     print(f"Layer {layer_idx}: Correlation = {corr:.4f}")
+
+# print(f"\nBest LLM Word Layer: {best_llm_words_layer} with Correlation: {best_llm_words_correlation:.4f} with p-val: {best_llm_words_pval:.6f}")
+
+# print("\n--- LLM Layer Comparison Results (Sentences) ---")
+# for layer_idx in sorted(llm_correlation_results_sents.keys()):
+#     corr = llm_correlation_results_sents[layer_idx]
+#     print(f"Layer {layer_idx}: Correlation = {corr:.4f}")
+
+# print(f"\nBest LLM Sentence Layer: {best_llm_sents_layer} with Correlation: {best_llm_sents_correlation:.4f} with p-val: {best_llm_sents_pval:.6f}")
+
+
+# # Plot RDMs (Brain, LLM, VLM)
+
+# plot_rdm_heatmap(squareform(brain_group_rdm), "Brain Group RDM", concepts=concepts, save_path="brain_rdm_heatmap.png")
+# plot_rdm_heatmap(best_llm_words_rdm, "LLM Word RDM", concepts=concepts, save_path="llm_word_rdm_1st_layer_best_layer_heatmap.png")
+# plot_rdm_heatmap(best_llm_sents_rdm, "LLM Sentence RDM", concepts=concepts, save_path="llm_sents_rdm_last_layer_best_layer_heatmap.png")
+
+
+# plot_layerwise_correlation(
+#     llm_correlation_results_words,
+#     "LLM Word Embeddings: Correlation with Brain RDM by Layer",
+#     save_path="llm_words_layerwise_correlation.png"
+# )
+
+
+# plot_layerwise_correlation(
+#     llm_correlation_results_sents,
+#     "LLM Sentence Embeddings: Correlation with Brain RDM by Layer",
+#     save_path="llm_sents_layerwise_correlation.png"
+# )
+
+
+
+## # ================Any layer code VLM========================================================= # #
+
+print("Determining VisualBERT model layers...")
+temp_model, _ = load_visualbert()
+num_vis_bert_transformer_layers = temp_model.config.num_hidden_layers # Typically 12 for bert-base
+# Total outputs are embedding layer (0) + transformer layers (1 to num_vis_bert_transformer_layers)
+all_possible_vlm_layers = list(range(num_vis_bert_transformer_layers + 1))
 del temp_model # Free up memory
-print(f"BERT-base-uncased has {len(all_possible_llm_layers)} output layers (0 to {num_bert_transformer_layers}).")
+print(f"Visual BERT has {len(all_possible_vlm_layers)} output layers (0 to {num_vis_bert_transformer_layers}).")
 
 
 # --- Store results for each LLM layer ---
@@ -157,14 +284,14 @@ best_llm_words_rdm = None
 best_llm_words_pval = None
 
 print("\n--- Evaluating LLM Embeddings Across Layers ---")
-for layer_idx in all_possible_llm_layers:
+for layer_idx in all_possible_vlm_layers:
     print(f"\nProcessing LLM Layer: {layer_idx}")
     
     # Get LLM embeddings for the current layer
     # _ is used because we're currently only interested in sentence embeddings for comparison
-    current_llm_word_embeds, current_llm_sent_embeds = get_llm_embeddings(
+    current_llm_word_embeds, current_llm_sent_embeds = get_visualbert_embeddings(
         concept_to_sentences,
-        model_name="bert-base-uncased",
+        concept_to_images,
         layer_idx=layer_idx
     )
 
@@ -238,19 +365,20 @@ print(f"\nBest LLM Sentence Layer: {best_llm_sents_layer} with Correlation: {bes
 # Plot RDMs (Brain, LLM, VLM)
 
 plot_rdm_heatmap(squareform(brain_group_rdm), "Brain Group RDM", concepts=concepts, save_path="brain_rdm_heatmap.png")
-plot_rdm_heatmap(best_llm_words_rdm, "LLM Word RDM", concepts=concepts, save_path="llm_word_rdm_1st_layer_best_layer_heatmap.png")
-plot_rdm_heatmap(best_llm_sents_rdm, "LLM Sentence RDM", concepts=concepts, save_path="llm_sents_rdm_last_layer_best_layer_heatmap.png")
+plot_rdm_heatmap(best_llm_words_rdm, "VLM Word RDM", concepts=concepts, save_path="vlm_word_rdm_1st_layer_best_layer_heatmap.png")
+plot_rdm_heatmap(best_llm_sents_rdm, "VLM Sentence RDM", concepts=concepts, save_path="vlm_sents_rdm_last_layer_best_layer_heatmap.png")
 
 
 plot_layerwise_correlation(
     llm_correlation_results_words,
-    "LLM Word Embeddings: Correlation with Brain RDM by Layer",
+    "VLM Word Embeddings: Correlation with Brain RDM by Layer",
     save_path="llm_words_layerwise_correlation.png"
 )
 
 
 plot_layerwise_correlation(
     llm_correlation_results_sents,
-    "LLM Sentence Embeddings: Correlation with Brain RDM by Layer",
-    save_path="llm_sents_layerwise_correlation.png"
+    "VLM Sentence Embeddings: Correlation with Brain RDM by Layer",
+    save_path="vlm_sents_layerwise_correlation.png"
 )
+

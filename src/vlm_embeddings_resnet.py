@@ -71,7 +71,7 @@ def load_visualbert():
 
     # We will load the model and then potentially modify its visual input layer if needed.
     # However, VisualBERT's `visual_embeds` parameter is often flexible.
-    model = VisualBertModel.from_pretrained("uclanlp/visualbert-vqa-coco-pre").to(device)
+    model = VisualBertModel.from_pretrained("uclanlp/visualbert-vqa-coco-pre", output_hidden_states=True).to(device)
     tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
 
     # Check if VisualBERT's visual_embedding layer needs adjustment
@@ -98,7 +98,7 @@ def preprocess_image(image_path):
     image = Image.open(image_path).convert("RGB")
     return transform(image)
 
-def encode_image_text(model, tokenizer, text, image_tensor):
+def encode_image_text(model, tokenizer, text, image_tensor, layer_idx: int = -1):
     # Simulate VisualBERT-compatible input
     inputs = tokenizer(text, return_tensors="pt").to(device)
 
@@ -119,9 +119,16 @@ def encode_image_text(model, tokenizer, text, image_tensor):
         visual_token_type_ids=visual_token_type_ids,
         visual_attention_mask=visual_attention_mask,
     )
-    return outputs.last_hidden_state[:, 0, :].squeeze().cpu().detach().numpy()  # CLS token
 
-def get_visualbert_embeddings(concept_to_sentences, concept_to_images):
+    selected_layer_hidden_state = outputs.hidden_states[layer_idx]
+
+    # Extract the CLS token (first token) embedding from the selected layer
+    cls_embedding = selected_layer_hidden_state[:, 0, :].squeeze().cpu().detach().numpy()
+
+    return cls_embedding
+    #return outputs.last_hidden_state[:, 0, :].squeeze().cpu().detach().numpy()  # CLS token
+
+def get_visualbert_embeddings(concept_to_sentences, concept_to_images, layer_idx: int = 12):
     model, tokenizer = load_visualbert()
 
     word_embeddings_per_concept = {}
@@ -132,7 +139,7 @@ def get_visualbert_embeddings(concept_to_sentences, concept_to_images):
         word_embeds = []
         for img_path in image_paths:
             image_tensor = preprocess_image(img_path)
-            embed = encode_image_text(model, tokenizer, concept, image_tensor)
+            embed = encode_image_text(model, tokenizer, concept, image_tensor, layer_idx=layer_idx)
             word_embeds.append(embed)
         word_embeddings_per_concept[concept] = np.mean(word_embeds, axis=0)
 
@@ -140,7 +147,7 @@ def get_visualbert_embeddings(concept_to_sentences, concept_to_images):
         for sentence in sentences:
             for img_path in image_paths:
                 image_tensor = preprocess_image(img_path)
-                embed = encode_image_text(model, tokenizer, sentence, image_tensor)
+                embed = encode_image_text(model, tokenizer, sentence, image_tensor, layer_idx=layer_idx)
                 sentence_embeds.append(embed)
         sentence_embeddings_per_concept[concept] = np.mean(sentence_embeds, axis=0)
 

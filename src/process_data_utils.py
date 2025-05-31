@@ -222,3 +222,55 @@ def plot_layerwise_correlation(
         plt.show()
 
 
+def plot_layerwise_correlation(
+    word_corr: dict,
+    sent_corr: dict,
+    title: str,
+    x_label: str = "Layer Index",
+    y_label: str = "Correlation (Spearman's ρ)",
+    save_path: str = None,
+    figsize: tuple = (10, 6)
+):
+    """
+    Plots a line graph showing word and sentence correlation values across layers.
+
+    Args:
+        word_corr (dict): Layer index to word correlation values.
+        sent_corr (dict): Layer index to sentence correlation values.
+        title (str): The title of the plot.
+        x_label (str): X-axis label.
+        y_label (str): Y-axis label.
+        save_path (str, optional): Path to save plot. If None, show the plot.
+        figsize (tuple): Size of the figure.
+    """
+    sorted_layers = sorted(word_corr.keys())
+    word_vals = [word_corr[l] for l in sorted_layers]
+    sent_vals = [sent_corr[l] for l in sorted_layers]
+
+    plt.figure(figsize=figsize)
+
+    sns.lineplot(x=sorted_layers, y=word_vals, marker='o', label="Words", color="skyblue")
+    sns.lineplot(x=sorted_layers, y=sent_vals, marker='o', label="Sentences", color="steelblue")
+
+    # Highlight best layers
+    best_word_layer = max((l for l in word_corr if not np.isnan(word_corr[l])), key=lambda l: word_corr[l])
+    best_sent_layer = max((l for l in sent_corr if not np.isnan(sent_corr[l])), key=lambda l: sent_corr[l])
+
+    plt.axvline(x=best_word_layer, linestyle='--', color='skyblue', alpha=0.6, label=f'Best Word Layer: {best_word_layer}')
+    plt.axvline(x=best_sent_layer, linestyle='--', color='steelblue', alpha=0.6, label=f'Best Sent Layer: {best_sent_layer}')
+
+    plt.title(title, fontsize=16)
+    plt.xlabel(x_label, fontsize=12)
+    plt.ylabel(y_label, fontsize=12)
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.xticks(sorted_layers)
+    plt.legend()
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Layer-wise correlation plot saved to {save_path}")
+    else:
+        plt.show()
+
